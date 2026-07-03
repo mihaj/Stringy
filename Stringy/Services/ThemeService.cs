@@ -5,21 +5,16 @@ namespace Stringy.Services;
 /// <summary>Tracks the light/dark theme, persisting the choice to localStorage via a tiny JS shim.</summary>
 public sealed class ThemeService(IJSRuntime js)
 {
-    public string Theme { get; private set; } = "dark";
+    public string Theme { get; private set; } = "light";
     public bool IsDark => Theme == "dark";
 
     public event Action? OnChange;
 
-    /// <summary>Reads the persisted theme (or the OS preference on first visit).</summary>
+    /// <summary>Reads the persisted theme, defaulting to light when the user hasn't chosen one.</summary>
     public async Task InitializeAsync()
     {
         var saved = await js.InvokeAsync<string?>("stringy.getTheme");
-        if (string.IsNullOrEmpty(saved))
-        {
-            var prefersDark = await js.InvokeAsync<bool>("stringy.prefersDark");
-            saved = prefersDark ? "dark" : "light";
-        }
-        Theme = saved;
+        Theme = string.IsNullOrEmpty(saved) ? "light" : saved;
         await ApplyAsync();
     }
 

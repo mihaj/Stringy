@@ -11,7 +11,7 @@
 }
 
 /* ---- Design tokens ---------------------------------------- */
-:root,
+/* Light is the default theme (bare :root); dark is opt-in via [data-theme="dark"]. */
 :root[data-theme="dark"] {
   --bg: #0a0f0d;
   --bg-glow: rgba(74, 222, 128, 0.06);
@@ -36,6 +36,7 @@
   color-scheme: dark;
 }
 
+:root,
 :root[data-theme="light"] {
   --bg: #eef3ef;
   --bg-glow: rgba(5, 150, 105, 0.07);
