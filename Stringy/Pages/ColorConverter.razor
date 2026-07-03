@@ -1,0 +1,128 @@
+@page "/color"
+@layout MainLayout
+
+<PageTitle>Color — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Color</h1>
+        <p>Convert between RGB and HEX. The format is detected automatically — or pick a colour from the wheel.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="c-in"><span>color</span></label>
+            <div class="field-row">
+                <input id="c-in" type="text" @bind="_input" @bind:event="oninput" @bind:after="Recompute"
+                       placeholder="rgb(255, 0, 0)  ·  rgba(255, 0, 0, 0.5)  ·  #ff0000  ·  #ff000080"/>
+                <button class="icon-btn @(_showWheel ? "active" : "")" title="Pick from wheel"
+                        @onclick="() => _showWheel = !_showWheel" aria-label="Toggle colour wheel">🎨</button>
+            </div>
+        </div>
+
+        @if (_showWheel)
+        {
+            <div class="wheel-pop">
+                <ColorWheel OnColorChange="OnWheelChange"/>
+                <div class="wheel-actions">
+                    <button class="btn btn--ghost" @onclick="() => _showWheel = false">Cancel</button>
+                    <button class="btn btn--primary" @onclick="UseWheelColor">Use colour</button>
+                </div>
+            </div>
+        }
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+
+        <div class="swatch">
+            @if (_preview is not null)
+            {
+                <div class="swatch__fill" style="background:@_preview"></div>
+            }
+        </div>
+
+        <div class="grid-2">
+            <div class="field">
+                <label class="field__label"><span>rgb</span></label>
+                <div class="output-wrap">
+                    <div class="display @(string.IsNullOrEmpty(_rgb) ? "display--empty" : "")">@(string.IsNullOrEmpty(_rgb) ? "—" : _rgb)</div>
+                    <CopyButton Text="@_rgb"/>
+                </div>
+            </div>
+            <div class="field">
+                <label class="field__label"><span>hex</span></label>
+                <div class="output-wrap">
+                    <div class="display @(string.IsNullOrEmpty(_hex) ? "display--empty" : "")">@(string.IsNullOrEmpty(_hex) ? "—" : _hex)</div>
+                    <CopyButton Text="@_hex"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _rgb = "";
+    private string _hex = "";
+    private string? _preview;
+    private string? _error;
+    private bool _showWheel;
+    private string? _tempColor;
+
+    private void OnWheelChange(string hex) => _tempColor = hex;
+
+    private void UseWheelColor()
+    {
+        if (!string.IsNullOrEmpty(_tempColor))
+        {
+            _input = _tempColor;
+            Recompute();
+        }
+        _showWheel = false;
+    }
+
+    private void Recompute()
+    {
+        _error = null;
+
+        if (string.IsNullOrWhiteSpace(_input))
+        {
+            _rgb = "";
+            _hex = "";
+            _preview = null;
+            return;
+        }
+
+        try
+        {
+            if (ColorTool.ValidateRgb(_input))
+            {
+                _hex = ColorTool.RgbToHex(_input);
+                _rgb = _input;
+            }
+            else if (ColorTool.ValidateHex(_input))
+            {
+                _rgb = ColorTool.HexToRgb(_input);
+                _hex = _input;
+            }
+            else
+            {
+                _rgb = "";
+                _hex = "";
+                _preview = null;
+                _error = "Enter RGB like rgb(255, 0, 0) or HEX like #ff0000.";
+                return;
+            }
+            _preview = _hex;
+        }
+        catch (Exception ex)
+        {
+            _rgb = "";
+            _hex = "";
+            _preview = null;
+            _error = ex.Message;
+        }
+    }
+}

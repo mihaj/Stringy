@@ -1,0 +1,110 @@
+@page "/regex"
+@layout MainLayout
+
+<PageTitle>Regex — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Regex</h1>
+        <p>Test a string against a regular expression as you type. Flags <code>i</code>, <code>m</code> and <code>s</code> are supported.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="rx-in"><span>test string</span></label>
+            <textarea id="rx-in" @bind="_input" @bind:event="oninput" @bind:after="Recompute"
+                      placeholder="Enter the string to test…"></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="rx-pat"><span>pattern</span></label>
+            <input id="rx-pat" type="text" @bind="_pattern" @bind:event="oninput" @bind:after="Recompute"
+                   placeholder="e.g. ^[a-z0-9_]+$"/>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="rx-flags"><span>flags</span> <span class="field__meta">optional</span></label>
+            <input id="rx-flags" type="text" @bind="_flags" @bind:event="oninput" @bind:after="Recompute"
+                   placeholder="e.g. i, m, s"/>
+        </div>
+
+        <div class="field">
+            <span class="field__label"><span>common patterns</span></span>
+            <div class="chips">
+                @foreach (var p in RegexHelpers.Patterns)
+                {
+                    <button type="button" class="chip" title="@p.Value  ·  e.g. @p.Sample"
+                            @onclick="() => UsePattern(p)">@p.Label</button>
+                }
+            </div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+        else if (_result is not null)
+        {
+            <div class="field">
+                <label class="field__label"><span>result</span></label>
+                <div class="output-wrap">
+                    <div class="display">
+                        @if (_result.Valid)
+                        {
+                            <span style="color:var(--accent)">✓ match</span>
+                            <span style="color:var(--muted)"> · @_result.MatchCount @(_result.MatchCount == 1 ? "match" : "matches")</span>
+                            @if (!string.IsNullOrEmpty(_result.FirstMatch))
+                            {
+                                <span style="color:var(--muted)"> · first “</span><span>@_result.FirstMatch</span><span style="color:var(--muted)">”</span>
+                            }
+                        }
+                        else
+                        {
+                            <span style="color:var(--muted)">✗ no match</span>
+                        }
+                    </div>
+                    <CopyButton Text="@_result.Valid.ToString().ToLowerInvariant()"/>
+                </div>
+            </div>
+        }
+
+        <div class="helper-block">
+            <div class="helper-title">cheatsheet</div>
+            <div class="cheatsheet">
+                @foreach (var t in RegexHelpers.Cheatsheet)
+                {
+                    <div class="cheat"><code>@t.Symbol</code><span>@t.Meaning</span></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _pattern = "";
+    private string _flags = "";
+    private RegexTester.Result? _result;
+    private string? _error;
+
+    private void UsePattern(RegexHelpers.Pattern p)
+    {
+        _pattern = p.Value;
+        if (string.IsNullOrEmpty(_input)) _input = p.Sample;
+        Recompute();
+    }
+
+    private void Recompute()
+    {
+        if (string.IsNullOrEmpty(_pattern))
+        {
+            _result = null;
+            _error = null;
+            return;
+        }
+
+        var outcome = RegexTester.Validate(_input, _pattern, _flags);
+        _error = outcome.Error;
+        _result = outcome.Error is null ? outcome : null;
+    }
+}

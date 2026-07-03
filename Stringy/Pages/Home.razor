@@ -1,0 +1,47 @@
+@page "/"
+@layout MainLayout
+
+<PageTitle>Transform — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Transform</h1>
+        <p>Reshape text between cases and slug formats. Output updates as you type.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="tf-in">
+                <span>input</span>
+                <span class="field__meta">@(_input.Length) chars</span>
+            </label>
+            <textarea id="tf-in" @bind="_input" @bind:event="oninput"
+                      placeholder="Enter text to transform…" autofocus></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="tf-mode"><span>format</span></label>
+            <select id="tf-mode" @bind="_mode">
+                @foreach (var opt in StringTransformer.Options)
+                {
+                    <option value="@opt.Value">@opt.Label</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="tf-out"><span>output</span></label>
+            <div class="output-wrap">
+                <textarea id="tf-out" class="output" readonly>@Output</textarea>
+                <CopyButton Text="@Output"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _mode = "uppercase";
+
+    private string Output => StringTransformer.Transform(_input, _mode);
+}

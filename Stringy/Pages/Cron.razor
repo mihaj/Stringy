@@ -1,0 +1,93 @@
+@page "/cron"
+@layout MainLayout
+
+<PageTitle>Cron — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Cron</h1>
+        <p>Build and read cron schedules. Type an expression or pick a preset — the plain-English meaning updates live.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="cron-in"><span>cron expression</span></label>
+            <div class="output-wrap">
+                <input id="cron-in" type="text" style="padding-right:82px"
+                       @bind="_expr" @bind:event="oninput" @bind:after="Recompute"
+                       placeholder="*/5 * * * *" autofocus/>
+                <CopyButton Text="@_expr"/>
+            </div>
+        </div>
+
+        <div class="cron-legend">
+            <div><b>@Tok(0)</b> minute<br/>0–59</div>
+            <div><b>@Tok(1)</b> hour<br/>0–23</div>
+            <div><b>@Tok(2)</b> day<br/>1–31</div>
+            <div><b>@Tok(3)</b> month<br/>1–12</div>
+            <div><b>@Tok(4)</b> weekday<br/>0–6</div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+        else if (!string.IsNullOrEmpty(_description))
+        {
+            <div class="field">
+                <label class="field__label"><span>meaning</span></label>
+                <div class="display cron-readout">@_description</div>
+            </div>
+        }
+
+        <div class="field">
+            <span class="field__label"><span>presets</span></span>
+            <div class="chips">
+                @foreach (var p in CronTool.Presets)
+                {
+                    <button type="button" class="chip" title="@p.Expression" @onclick="() => UsePreset(p)">@p.Label</button>
+                }
+            </div>
+        </div>
+
+        <div class="helper-block">
+            <div class="helper-title">cron syntax</div>
+            <div class="cheatsheet">
+                <div class="cheat"><code>*</code><span>any value</span></div>
+                <div class="cheat"><code>*/n</code><span>every n units</span></div>
+                <div class="cheat"><code>a-b</code><span>a range, a to b</span></div>
+                <div class="cheat"><code>a,b</code><span>a list of values</span></div>
+                <div class="cheat"><code>5</code><span>one exact value</span></div>
+                <div class="cheat"><code>MON</code><span>weekday / month name</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _expr = "*/5 * * * *";
+    private string _description = "";
+    private string? _error;
+    private string[] _tokens = [];
+
+    protected override void OnInitialized() => Recompute();
+
+    private void UsePreset(CronTool.Preset p)
+    {
+        _expr = p.Expression;
+        Recompute();
+    }
+
+    private string Tok(int i) => i < _tokens.Length ? _tokens[i] : "–";
+
+    private void Recompute()
+    {
+        _tokens = string.IsNullOrWhiteSpace(_expr)
+            ? []
+            : _expr.Trim().Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+
+        var result = CronTool.Describe(_expr);
+        _error = result.Error;
+        _description = result.Ok ? result.Text : "";
+    }
+}

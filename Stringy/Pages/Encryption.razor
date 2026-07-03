@@ -1,0 +1,92 @@
+@page "/encrypt"
+@layout MainLayout
+
+<PageTitle>Encrypt — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Encrypt</h1>
+        <p>AES-256-CBC with a password-derived key (PBKDF2, 10,000 iterations). Keep the password safe — without it the text can't be recovered.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="e-in"><span>@(_encrypting ? "plaintext" : "ciphertext")</span></label>
+            <textarea id="e-in" @bind="_input" @bind:event="oninput" @bind:after="Recompute"
+                      placeholder="@(_encrypting ? "Enter text to encrypt…" : "Paste ciphertext to decrypt…")"></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="e-pw"><span>password</span></label>
+            <input id="e-pw" type="password" @bind="_password" @bind:event="oninput" @bind:after="Recompute"
+                   placeholder="Enter password…" autocomplete="off"/>
+        </div>
+
+        <div class="field">
+            <label class="field__label"><span>mode</span></label>
+            <div class="segmented">
+                <button class="segmented__item @(_encrypting ? "active" : "")" @onclick="() => SetMode(true)">Encrypt</button>
+                <button class="segmented__item @(!_encrypting ? "active" : "")" @onclick="() => SetMode(false)">Decrypt</button>
+            </div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+
+        <div class="field">
+            <label class="field__label" for="e-out"><span>@(_encrypting ? "ciphertext" : "plaintext")</span></label>
+            <div class="output-wrap">
+                <textarea id="e-out" class="output" readonly>@_output</textarea>
+                <CopyButton Text="@_output"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _password = "";
+    private string _output = "";
+    private string? _error;
+    private bool _encrypting = true;
+
+    private void SetMode(bool encrypting)
+    {
+        _encrypting = encrypting;
+        Recompute();
+    }
+
+    private void Recompute()
+    {
+        _error = null;
+
+        if (string.IsNullOrEmpty(_input))
+        {
+            _output = "";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_password))
+        {
+            _output = "";
+            _error = "Enter a password to continue.";
+            return;
+        }
+
+        try
+        {
+            _output = _encrypting
+                ? CryptoTool.Encrypt(_input, _password)
+                : CryptoTool.Decrypt(_input, _password);
+        }
+        catch
+        {
+            _output = "";
+            _error = _encrypting
+                ? "Encryption failed."
+                : "Couldn't decrypt — check the ciphertext and password.";
+        }
+    }
+}

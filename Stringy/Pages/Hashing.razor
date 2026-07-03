@@ -1,0 +1,50 @@
+@page "/hash"
+@layout MainLayout
+
+<PageTitle>Hash — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Hash</h1>
+        <p>Compute a cryptographic digest of your text. Hashing is one-way — you can't recover the input from the hash.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="h-in">
+                <span>input</span>
+                <span class="field__meta">@(_input.Length) chars</span>
+            </label>
+            <textarea id="h-in" @bind="_input" @bind:event="oninput"
+                      placeholder="Enter text to hash…" autofocus></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="h-algo"><span>algorithm</span></label>
+            <select id="h-algo" @bind="_algo">
+                @foreach (var opt in Hasher.Options)
+                {
+                    <option value="@opt.Value">@opt.Label</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field__label" for="h-out">
+                <span>digest</span>
+                <span class="field__meta">@(Output.Length) hex chars</span>
+            </label>
+            <div class="output-wrap">
+                <div class="display">@Output</div>
+                <CopyButton Text="@Output"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _algo = "sha256";
+
+    private string Output => Hasher.Compute(_input, _algo);
+}

@@ -1,0 +1,63 @@
+<div class="wheel"
+     @onpointerdown="OnDown"
+     @onpointermove="OnMove"
+     @onpointerup="StopDrag"
+     @onpointerleave="StopDrag"
+     role="slider"
+     aria-label="Colour wheel"
+     aria-valuetext="@Selected">
+    <span class="wheel__cursor"
+          style="left:@Fmt(_cursorX)px; top:@Fmt(_cursorY)px; background:@Selected;"></span>
+</div>
+<div class="wheel-selected">selected <b>@Selected</b></div>
+
+@code {
+    [Parameter] public EventCallback<string> OnColorChange { get; set; }
+
+    private const double Size = 240;
+    private const double Center = Size / 2;
+    private const double Radius = Center - 5;
+
+    public string Selected { get; private set; } = "#ff0000";
+    // Default cursor sits at hue 0, full saturation (the right-hand rim = red).
+    private double _cursorX = Center + Radius;
+    private double _cursorY = Center;
+    private bool _dragging;
+
+    private void OnDown(PointerEventArgs e)
+    {
+        _dragging = true;
+        Pick(e.OffsetX, e.OffsetY);
+    }
+
+    private void OnMove(PointerEventArgs e)
+    {
+        if (_dragging) Pick(e.OffsetX, e.OffsetY);
+    }
+
+    private void StopDrag() => _dragging = false;
+
+    private void Pick(double x, double y)
+    {
+        var dx = x - Center;
+        var dy = y - Center;
+        var distance = Math.Sqrt(dx * dx + dy * dy);
+
+        var angle = Math.Atan2(dy, dx);
+        if (angle < 0) angle += Math.PI * 2;
+
+        var hue = angle / (Math.PI * 2);
+        var saturation = Math.Min(1, distance / Radius);
+        var (r, g, b) = ColorTool.HslToRgb(hue, saturation, 0.5);
+        Selected = ColorTool.RgbToHex(r, g, b);
+
+        // Keep the indicator on or inside the rim.
+        var clamped = Math.Min(distance, Radius);
+        _cursorX = Center + Math.Cos(angle) * clamped;
+        _cursorY = Center + Math.Sin(angle) * clamped;
+
+        OnColorChange.InvokeAsync(Selected);
+    }
+
+    private static string Fmt(double v) => v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+}

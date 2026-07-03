@@ -1,0 +1,62 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ThemeService Theme
+
+<div class="app">
+    <header class="masthead">
+        <div class="shell">
+            <div class="masthead__row">
+                <a class="brand" href="" aria-label="Stringy home">
+                    <span class="brand__mark">&gt;_</span>
+                    <span class="brand__name">stringy<span class="brand__caret">▍</span></span>
+                </a>
+                <div class="masthead__tools">
+                    <span class="badge" title="No analytics, no ads, no network calls. Everything runs in your browser.">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <span class="badge__text">no&nbsp;tracking</span>
+                    </span>
+                    <ThemeToggle/>
+                </div>
+            </div>
+            <nav class="tabs" aria-label="Tools">
+                <NavLink class="tab" href="" Match="NavLinkMatch.All"><span class="tab__glyph">Aa</span> Transform</NavLink>
+                <NavLink class="tab" href="base64"><span class="tab__glyph">64</span> Base64</NavLink>
+                <NavLink class="tab" href="color"><span class="tab__glyph">◑</span> Color</NavLink>
+                <NavLink class="tab" href="hash"><span class="tab__glyph">#</span> Hash</NavLink>
+                <NavLink class="tab" href="encrypt"><span class="tab__glyph">🔒</span> Encrypt</NavLink>
+                <NavLink class="tab" href="regex"><span class="tab__glyph">.*</span> Regex</NavLink>
+                <NavLink class="tab" href="cron"><span class="tab__glyph">⏲</span> Cron</NavLink>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="shell">
+            @Body
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="shell footer__row">
+            <span>© @DateTime.Now.Year <a href="https://mihajakovac.com" target="_blank" rel="noopener noreferrer">Miha Jakovac</a> · built with Blazor WebAssembly</span>
+            <span class="footer__tags">
+                <span class="footer__tag">100% client-side</span>
+                <span class="footer__tag">no tracking</span>
+                <span class="footer__tag">no ads</span>
+            </span>
+        </div>
+    </footer>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Theme.OnChange += StateHasChanged;
+        await Theme.InitializeAsync();
+    }
+
+    public void Dispose() => Theme.OnChange -= StateHasChanged;
+}

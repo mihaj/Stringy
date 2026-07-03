@@ -1,0 +1,77 @@
+@page "/base64"
+@layout MainLayout
+
+<PageTitle>Base64 — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>Base64</h1>
+        <p>Encode text to Base64 or decode it back. UTF-8 aware, so emoji and accents survive the round trip.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="b64-in">
+                <span>input</span>
+                <span class="field__meta">@(_input.Length) chars</span>
+            </label>
+            <textarea id="b64-in" @bind="_input" @bind:event="oninput" @bind:after="Recompute"
+                      placeholder="@(_encoding ? "Enter text to encode…" : "Paste Base64 to decode…")"></textarea>
+        </div>
+
+        <div class="field">
+            <label class="field__label"><span>mode</span></label>
+            <div class="segmented" role="tablist">
+                <button class="segmented__item @(_encoding ? "active" : "")" @onclick="() => SetMode(true)">Encode</button>
+                <button class="segmented__item @(!_encoding ? "active" : "")" @onclick="() => SetMode(false)">Decode</button>
+            </div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+
+        <div class="field">
+            <label class="field__label" for="b64-out"><span>output</span></label>
+            <div class="output-wrap">
+                <textarea id="b64-out" class="output" readonly>@_output</textarea>
+                <CopyButton Text="@_output"/>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _output = "";
+    private string? _error;
+    private bool _encoding = true;
+
+    private void SetMode(bool encoding)
+    {
+        _encoding = encoding;
+        Recompute();
+    }
+
+    private void Recompute()
+    {
+        if (string.IsNullOrEmpty(_input))
+        {
+            _output = "";
+            _error = null;
+            return;
+        }
+
+        try
+        {
+            _output = _encoding ? Base64Tool.Encode(_input) : Base64Tool.Decode(_input);
+            _error = null;
+        }
+        catch
+        {
+            _output = "";
+            _error = "That isn't valid Base64. Check for stray characters or padding.";
+        }
+    }
+}
