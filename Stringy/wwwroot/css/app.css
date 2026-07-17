@@ -610,6 +610,54 @@ code {
 }
 .cron-readout .muted { color: var(--muted); font-size: 0.86rem; }
 
+/* ---- QR code ----------------------------------------------- */
+.btn--ghost {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--text-strong);
+}
+.btn--ghost:hover { border-color: var(--accent); color: var(--accent); }
+.btn--ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+}
+
+.qr-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.qr-preview {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+.qr-preview--empty {
+  border-style: dashed;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  padding: 48px 24px;
+}
+.qr-preview__frame { max-width: 100%; }
+/* The SVG stays black-on-white in both themes — scanners need the contrast. */
+.qr-preview__frame svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
 /* ---- Footer ----------------------------------------------- */
 .footer {
   border-top: 1px solid var(--line);

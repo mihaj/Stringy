@@ -1,0 +1,159 @@
+@page "/qr"
+@layout MainLayout
+@inject ClipboardService Clipboard
+
+<PageTitle>QR code — Stringy</PageTitle>
+
+<div class="page-enter">
+    <div class="page-head">
+        <h1>QR code</h1>
+        <p>Turn text, a URL, or Wi-Fi details into a QR code — up to @QrTool.MaxLength characters, generated entirely in your browser. Higher error correction keeps the code scannable when it's partially covered or damaged.</p>
+    </div>
+
+    <div class="stack">
+        <div class="field">
+            <label class="field__label" for="qr-in">
+                <span>input</span>
+                <span class="field__meta">@(_input.Length) / @QrTool.MaxLength chars</span>
+            </label>
+            <textarea id="qr-in" @bind="_input" @bind:event="oninput" @bind:after="Recompute"
+                      maxlength="@QrTool.MaxLength" placeholder="Type or paste text to encode…" autofocus></textarea>
+            <div class="qr-actions">
+                <button type="button" class="btn btn--ghost" @onclick="PasteFromClipboard">Paste from clipboard</button>
+                <button type="button" class="btn btn--ghost" @onclick="Clear" disabled="@string.IsNullOrEmpty(_input)">Clear</button>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="field">
+                <label class="field__label">
+                    <span>size</span>
+                    <span class="field__meta">@_size × @_size px</span>
+                </label>
+                <div class="segmented" role="tablist">
+                    @foreach (var opt in QrTool.Sizes)
+                    {
+                        <button class="segmented__item @(_size == opt.Pixels ? "active" : "")"
+                                title="@opt.Pixels × @opt.Pixels px"
+                                @onclick="() => SetSize(opt.Pixels)">@opt.Label</button>
+                    }
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="field__label">
+                    <span>error correction</span>
+                    <span class="field__meta">@CurrentEcc.Hint</span>
+                </label>
+                <div class="segmented" role="tablist">
+                    @foreach (var opt in QrTool.EccLevels)
+                    {
+                        <button class="segmented__item @(_ecc == opt.Value ? "active" : "")"
+                                title="@opt.Hint"
+                                @onclick="() => SetEcc(opt.Value)">@opt.Label</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (_error is not null)
+        {
+            <ErrorAlert Message="@_error"/>
+        }
+
+        <div class="field">
+            <label class="field__label">
+                <span>qr code</span>
+                @if (_result is not null)
+                {
+                    <span class="field__meta">@_result.Modules × @_result.Modules modules</span>
+                }
+            </label>
+            @if (_result is not null)
+            {
+                <div class="qr-preview">
+                    <div class="qr-preview__frame" style="width: @(_size)px">
+                        @((MarkupString)_result.Svg)
+                    </div>
+                </div>
+                <div class="qr-actions">
+                    <a class="btn btn--primary" download="qr-code.svg" href="@DownloadHref">Download SVG</a>
+                    <CopyButton Text="@_result.Svg" Label="Copy SVG" Inline="true"/>
+                </div>
+            }
+            else
+            {
+                <div class="qr-preview qr-preview--empty">Your QR code appears here.</div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _input = "";
+    private string _ecc = "medium";
+    private int _size = 256;
+    private QrTool.Result? _result;
+    private string? _error;
+
+    private QrTool.EccOption CurrentEcc => QrTool.EccLevels.First(o => o.Value == _ecc);
+
+    private string DownloadHref => _result is null ? "" : QrTool.ToDownloadUrl(_result.Svg, _size);
+
+    private void SetSize(int pixels) => _size = pixels;
+
+    private void SetEcc(string ecc)
+    {
+        _ecc = ecc;
+        Recompute();
+    }
+
+    private void Clear()
+    {
+        _input = "";
+        Recompute();
+    }
+
+    private async Task PasteFromClipboard()
+    {
+        var text = await Clipboard.PasteAsync();
+        if (string.IsNullOrEmpty(text))
+        {
+            _error = "Couldn't read the clipboard — your browser blocked it or it's empty. Paste into the input directly instead.";
+            return;
+        }
+
+        var trimmed = text.Length > QrTool.MaxLength;
+        _input = trimmed ? text[..QrTool.MaxLength] : text;
+        Recompute();
+        if (trimmed)
+        {
+            _error = $"Clipboard text was longer than {QrTool.MaxLength} characters, so it was trimmed.";
+        }
+    }
+
+    private void Recompute()
+    {
+        _error = null;
+        // maxlength only guards real typing — autofill or extensions can still overshoot.
+        if (_input.Length > QrTool.MaxLength)
+        {
+            _input = _input[..QrTool.MaxLength];
+        }
+        if (string.IsNullOrEmpty(_input))
+        {
+            _result = null;
+            return;
+        }
+
+        try
+        {
+            _result = QrTool.Generate(_input, _ecc);
+        }
+        catch
+        {
+            _result = null;
+            _error = "That text couldn't be encoded as a QR code. Try shortening it or lowering the error correction level.";
+        }
+    }
+}
